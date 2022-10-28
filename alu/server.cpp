@@ -5,6 +5,9 @@ using namespace std;
 // compartir variables y que por lo tanto las herramientas de sincronziacion
 // como semaforos son perfectamente validas.
 
+vector<vector<int>> matrix(3, vector<int>(3));
+vector<int> socketsListos
+
 
 // Servicio draw: En cada tick, imprime el mapa con el estado de cada celula 
 void draw()
@@ -43,31 +46,76 @@ void map_creator(/* TO DO*/)
 
 }
 
-void server_accept_conns(int s)
+void server_accept_conns(int newSocket)
 {
-    while(1)
-    {
-        /* Acpetar nueva celula*/
-        /* TO DO*/
-        
-        /* Si ya hay suficientes para armar matriz de 3x3 o para agregar L*/
-        /* Actualizar el mapa permitiendo que sigan llegando conexiones */
-        /* Sugerencia: Lanzar thread pmap_creator
-
-        /* Si no, marcarlas como pendientes y continuar*/
-        /* TO DO*/   
-
+    socketsListos.push_back(socketNuevo);
+    if(socketsListos.size() == 9){
+        for (size_t i = 0; i < 3 ; i++)
+        {
+            for (size_t j = 0; j < 3; j++)
+            {
+                matrix[i][j] = socketsListos[i*j];
+                return true
+            }
+        }
     }
+    return false
 }
 
-int main(int argc, char* argv[])
+int main(void)
 {
     int s;
-    thread ths[MAX_CLIENTS];
-    s = set_acc_socket(atoi(argv[1]));
+    struct sockaddr_in local;
+    struct sockaddr_in remote;
+    vector <thread> threads;
 
-    /* Levantar servicios y aceptar conexiones */
-   /* TO DO*/
+    s = socket(PF_INET, SOCK_STREAM, 0);
+    if (s == -1) {
+        perror("socket");
+        exit(1);
+    }
+
+    local.sin_family = AF_INET;
+    local.sin_port = htons(PORT);
+    local.sin_addr.s_addr = INADDR_ANY;
+
+
+    int localLink = bind(s, (struct sockaddr *)&local, sizeof(local);
+    if (localLink < 0) {
+        perror("bind");
+        exit(1);
+    }
+
+    int listenMode = listen(s, 10);
+    if (listenMode == -1) {
+        perror("listen");
+        exit(1);
+    }
+
+    int t = sizeof(remote);
+    int socket;
+    for(;;){
+        socket = accept(s, (struct sockaddr*) &remote, (socklen_t*) &t);
+        if(socket == -1) {
+            perror("aceptando la conexión entrante");
+            exit(1);
+        }
+        threads.push_back(thread(connection_handler, socket));
+        if (server_accept_conns(socket))
+        {
+            request req;
+            strcpy(req.msg, "Todos conectados amiguitos");
+            strcpy(req.type, "Hola \n");
+            broadcast(matrix,&req);
+        }
+    }
+
+    for (unsigned int i = 0; i < threads.size(); i++)
+    {
+        threads[i].join();
+    }
+    
+    close(s);
 
     return 0;
 }
