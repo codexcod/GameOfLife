@@ -38,10 +38,10 @@ void draw()
 		tablero+= "\n";
         for (size_t j = 0; j < socketsClientes.size(); j++)
         {
-			request req;
-            get_request(socketsClientes[i][j], &req);
+			request reqEstado;
+            get_request(socketsClientes[i][j], &reqEstado);
 			tablero+= " ";
-			tablero+= req.msg;
+			tablero+= reqEstado.msg;
 			tablero+= " ";
         }   
     }
@@ -207,11 +207,11 @@ int main(void)
 			{
 				for (size_t j = 0; j < socketsClientes.size(); j++)
 				{
-					request requestVecino;
-					get_request(socketsClientes[i][j], &requestVecino);
-					char puertas[sizeof(requestVecino.msg)];
-					strncpy(puertas, requestVecino.msg, sizeof(requestVecino.msg));
-					puertosClientes[i][j] = atoi(puertas);
+					request requestCliente;
+					get_request(socketsClientes[i][j], &requestCliente);
+					char puerto[sizeof(requestCliente.msg)];
+					strncpy(puerto, requestCliente.msg, sizeof(requestCliente.msg));
+					puertosClientes[i][j] = atoi(puerto);
 				}
 			}
 			notificarClientes();
