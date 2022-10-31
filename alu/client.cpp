@@ -14,11 +14,54 @@ bool estado;
 
 // Dado el estado actual de la celula y el estado de los vecinos en una ronda
 // computa el nuevo estado de la celula segun las reglas del juego
-bool set_state(bool alive, const vector<request>& cl)
+void set_state(int vecinosVivos)
 {
-	// TO DO
+	bool nuevoEstado;
+	if(vecinosVivos > 3)
+    {
+        estado = false;
+    }
+    if(vecinosVivos == 3) 
+    {
+        estado = true;
+    }
+	if(vecinosVivos < 2 ) 
+    {
+        estado = false;
+    }
+	if(vecinosVivos == 2 && estado) 
+    {
+        estado = true;
+    }
+
 }
 
+//Notificamos al server nuestro nuevo estado
+void notificarServer(int socketServer)
+{
+	request reqEstado;
+	strncpy(reqEstado.type, "ESTADO", 14);
+	strncpy(reqEstado.msg, estado ? "1" : "0", 2);
+	send_request(socketServer, &reqEstado);
+}
+
+//Aceptamos las conexiones entrantes de los vecinos
+int aceptarConexiones(sockaddr_in addr, vector<int> &socketsEscuchar)
+{
+	int t = sizeof(addr);
+	for (;;)
+	{
+		int socket = accept(mSocket, (struct sockaddr *)&addr, (socklen_t *)&t);
+		if (socket == -1)
+		{
+			perror("aceptando vecino");
+			exit(1);
+		}
+		socketsEscuchar.push_back(socket);
+	}
+}
+
+//Conectarse a un vecino
 int connect_socket(int puerto)
 {
 	struct sockaddr_in remote;
@@ -41,12 +84,57 @@ int connect_socket(int puerto)
 	return vecino;
 }
 
+//Cada vez que hay un tick se escucha el estado de los vecinos para setea el nuevo estado de la celula
+void escucharVecinos(vector<int> &socketsVecinos, int serverSocket)
+{
+	int vecinosVivos = 0;
+	for (int i = 0; i < socketsVecinos.size(); ++i)
+	{
+		request req;
+        get_request(socketsVecinos[i], req);
+		if (strncmp(req.msg, "1", 2) == 0)
+        {
+            vecinosVivos++;
+        }
+    }
+
+	set_state(vecinosVivos, vivo);
+	notificarServer(serverSocket);
+}
+
+//El cliente envia su estado a sus vecinos 
+void notificarVecinos(vector<int> &socketsHablar)
+{
+	for (int i = 0; i < socketsHablar.size(); ++i)
+	{
+		request reqEstado;
+        strncpy(reqEstado.type, "ESTADO", 7);
+        strncpy(reqEstado.msg, estado ? "1" : "0", 2);
+        send_request(socketsHablar[i], &reqEstado);
+	}
+}
+
 //Por cada puerto genera la conexion con sus vecinos
-void conectarVecinos(vector<int> &vecinosHablar)
+void conectarVecinos(vector<int> &socketsHablar)
 {
 	for (int i = 0; i < vecinos.size(); ++i)
 	{
-		vecinosHablar.push_back(connect_socket(vecinos[i]));
+		socketsHablar.push_back(connect_socket(vecinos[i]));
+	}
+}
+
+void getPuertosVecinos(string puertosVecinos, vector<int> &puertos)
+{
+	const char separador = '-';
+	stringstream ss(puertosVecinos);
+
+	string s;
+	while (std::getline(ss, s, separador))
+	{
+		if (s != "")
+		{
+			puertos.push_back(atoi(s.c_str()));
+		}
 	}
 }
 
@@ -85,7 +173,6 @@ int main(int argc, char* argv[]){
 		exit(1);
 	}
 
-    //Se setea el puerto con el numero aleatorio enviado
 	int puerto = atoi(argv[1]);
 	local.sin_family = AF_INET;
 	local.sin_port = htons(puerto);
@@ -112,29 +199,38 @@ int main(int argc, char* argv[]){
 		exit(1);
 	}
 
+    //Envia su puerto al servidor
 	request reqPuerto;
 	strncpy(reqPuerto.type, "PUERTA", 7);
 	strncpy(reqPuerto.msg, to_string(puerto).c_str(), sizeof(to_string(puerto).c_str()));
 	send_request(socket_fd, &reqPuerto);
+
+    //Envia su estado al servidor
 	request reqEstado;
 	strncpy(reqEstado.type, "ESTADO", 14);
-	strncpy(reqEstado.msg, BoolToString(estado), 2);
+	strncpy(reqEstado.msg, estado ? "1" : "0", 2);
 	send_request(socket_fd, &reqEstado);
+
 	while (1)
 	{
 		int socket;
 		request reqInfo;
 		get_request(socket_fd, &reqInfo);
+        //Esta llamada deberia llamarse una sola vez cuando el server notifique 
+        //los puertos vecinos del cliente
 		if (strncmp(reqInfo.type, "VECINOS", 8) == 0)
 		{
-			separarVecinos(string(reqInfo.msg), vecinos);
-			threads.push_back(thread(conectarVecinos, vecinos, ref(socketsHablar)));
-			threads.push_back(thread(aceptarVecinos, local, mSocket, ref(socketsEscuchar)));
+            //Separa el string que recibe el servidor para conocer los puertos vecinos
+			getPuertosVecinos(string(reqInfo.msg), vecinos);
+			threads.push_back(thread(conectarVecinos, ref(socketsHablar)));
+			threads.push_back(thread(aceptarConexiones, local, ref(socketsEscuchar)));
 		}
+        
+        //Cada 5 sec el servidor envia un tick en el cual el cliente actualiza su estado
 		if (strncmp(reqInfo.type, "TICK", 5) == 0)
 		{
-			threads.push_back(thread(contestarVecinos, ref(socketsHablar), estado));
-			threads.push_back(thread(escucharVecinos, ref(socketsEscuchar), ref(estado), socket_fd));
+			threads.push_back(thread(notificarVecinos, ref(socketsHablar)));
+			threads.push_back(thread(escucharVecinos, ref(socketsEscuchar), socket_fd));
 		}
 	}
 

@@ -5,10 +5,16 @@ using namespace std;
 // compartir variables y que por lo tanto las herramientas de sincronziacion
 // como semaforos son perfectamente validas.
 
+
+//Lista de los sockets clientes en el tablero
 vector<vector<int>> socketsClientes(3, vector<int>(3));
+//Lista de los puertos clientes
 vector<vector<int>> puertosClientes(3, vector<int>(3));
+//Lista de los sockets antes de arrancar el juego
 vector<int> socketsListos
 
+//Utilizamos una lista con las ubicaciones a sumar a las cordenadas de cada clientes
+//para calcular la posicion de los vecinos
 vector<vector<int>> vecinosPosibles{vector<int>{1, 1},
 vector<int>{0, 1},
 vector<int>{-1, 1},
@@ -17,16 +23,7 @@ vector<int>{1, 0},
 vector<int>{-1, 0},
 vector<int>{0, -1},
 vector<int>{-1, -1}};
-/*
-vecinosPosibles.push_back(vector<int>{1, 1});
-vecinosPosibles.push_back(vector<int>{0, 1});
-vecinosPosibles.push_back(vector<int>{-1, 1});
-vecinosPosibles.push_back(vector<int>{1, 0});
-vecinosPosibles.push_back(vector<int>{-1, 0});
-vecinosPosibles.push_back(vector<int>{1, -1});
-vecinosPosibles.push_back(vector<int>{0, -1});
-vecinosPosibles.push_back(vector<int>{-1, -1});
-*/
+
 
 
 // Servicio draw: En cada tick, imprime el mapa con el estado de cada celula 
@@ -50,7 +47,6 @@ void draw()
 
 // Servicio timer: Cada cierto intervalo de tiempo publica un tick. 
 //Es importante que cada tick se envie utilizando el mapa de vecinos actualizado
-
 void timer()
 {
 	int contador = 0;
@@ -68,27 +64,6 @@ void timer()
 		contador++;
 		sleep(5);
 	}
-}
-
-// Thread map_creator: Agrega los nuevos nodos al mapa
-void map_creator(/* TO DO*/)
-{
-  
-    /* Registrar los lsn ports de los nuevos */
-    /* TIP: Hay que esperar que los clientes manden el mensaje con el lsn port*/
-    /* Varias formas de hacerlo, pselect puede resultar comodo para este caso */
-    /* Crear threads podria ser demasiado overhead, pero es valido */
-    /* TO DO*/
-
-    // Avisar a las celulas que correspondan la nueva estructura de vecinos
-    // TIP: Puede ser util separar el caso inicial del resto, sobre todo para
-    //      facilitar luego el testeo
-    if(N ==3){
-        base_case_3x3(/* TO DO*/);
-        return;
-    }
-    general_case_nxn(/* TO DO*/);
-
 }
 
 //Se agrega un nuevo socket hasta alcanzar la cantidad maxima
