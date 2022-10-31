@@ -54,7 +54,7 @@ int aceptarConexiones(sockaddr_in addr, vector<int> &socketsEscuchar)
 		int socket = accept(mSocket, (struct sockaddr *)&addr, (socklen_t *)&t);
 		if (socket == -1)
 		{
-			perror("aceptando vecino");
+			perror("Error aceptando vecino");
 			exit(1);
 		}
 		socketsEscuchar.push_back(socket);
@@ -68,7 +68,7 @@ int connect_socket(int puerto)
 	int vecino;
 	if ((vecino = socket(PF_INET, SOCK_STREAM, 0)) == -1)
 	{
-		perror("creando socket");
+		perror("Error creando socket vecino");
 		exit(1);
 	}
 	remote.sin_family = AF_INET;
@@ -77,7 +77,7 @@ int connect_socket(int puerto)
 	int s = connect(vecino, (struct sockaddr *)&remote, sizeof(remote));
 	if (s == -1)
 	{
-		perror("conectandose");
+		perror("Error conectandose vecino");
 		exit(1);
 	}
 
@@ -158,7 +158,7 @@ int main(int argc, char* argv[]){
     int socket_fd = socket(PF_INET, SOCK_STREAM, 0);
 	if (socket_fd  == -1)
 	{
-		perror("creando socket");
+		perror("Error creando socket server");
 		exit(1);
 	}
 
@@ -169,7 +169,7 @@ int main(int argc, char* argv[]){
     mSocket = socket(PF_INET, SOCK_STREAM, 0);
 	if (mSocket == -1)
 	{
-		perror("socket");
+		perror("Error creando socket cliente");
 		exit(1);
 	}
 
@@ -181,21 +181,21 @@ int main(int argc, char* argv[]){
     int bind = bind(mSocket, (struct sockaddr *)&local, sizeof(local))
 	if (bind < 0)
 	{
-		perror("bind");
+		perror("Error bind cliente");
 		exit(1);
 	}
 
     int listenMode = listen(mSocket, 10);
 	if (listenMode == -1)
 	{
-		perror("listen");
+		perror("Error listen cliente");
 		exit(1);
 	}
 
 	int s = connect(socket_fd, (struct sockaddr *)&remote, sizeof(remote));
 	if (s == -1)
 	{
-		perror("conectandose");
+		perror("Error conectandose server");
 		exit(1);
 	}
 
@@ -225,7 +225,7 @@ int main(int argc, char* argv[]){
 			threads.push_back(thread(conectarVecinos, ref(socketsHablar)));
 			threads.push_back(thread(aceptarConexiones, local, ref(socketsEscuchar)));
 		}
-        
+
         //Cada 5 sec el servidor envia un tick en el cual el cliente actualiza su estado
 		if (strncmp(reqInfo.type, "TICK", 5) == 0)
 		{

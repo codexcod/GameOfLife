@@ -100,7 +100,7 @@ string stirngVecinos(vector<vector<int>> &vecinos)
 
 	for (int i = 0; i < vecinos.size(); ++i)
 	{
-		vecinosString += " ";
+		vecinosString += "-";
 		vecinosString += to_string(puertosClientes[vecinos[i][0]][vecinos[i][1]]);
 	}
 	return vecinosString;
@@ -146,7 +146,7 @@ int main(void)
 
     s = socket(PF_INET, SOCK_STREAM, 0);
     if (s == -1) {
-        perror("socket");
+        perror("Error socket server");
         exit(1);
     }
 
@@ -157,13 +157,13 @@ int main(void)
 
     int localLink = bind(s, (struct sockaddr *)&local, sizeof(local);
     if (localLink < 0) {
-        perror("bind");
+        perror("Error bind server");
         exit(1);
     }
 
     int listenMode = listen(s, 10);
     if (listenMode == -1) {
-        perror("listen");
+        perror("Error listen server");
         exit(1);
     }
 
@@ -172,7 +172,7 @@ int main(void)
     for(;;){
         socket = accept(s, (struct sockaddr*) &remote, (socklen_t*) &t);
         if(socket == -1) {
-            perror("aceptando la conexión entrante");
+            perror("Error aceptando cliente");
             exit(1);
         }
         threads.push_back(thread(connection_handler, socket));
