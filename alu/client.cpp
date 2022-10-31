@@ -91,14 +91,14 @@ void escucharVecinos(vector<int> &socketsVecinos, int serverSocket)
 	for (int i = 0; i < socketsVecinos.size(); ++i)
 	{
 		request req;
-        get_request(socketsVecinos[i], req);
+        get_request(&req, socketsVecinos[i]);
 		if (strncmp(req.msg, "1", 2) == 0)
         {
             vecinosVivos++;
         }
     }
 
-	set_state(vecinosVivos, vivo);
+	set_state(vecinosVivos);
 	notificarServer(serverSocket);
 }
 
@@ -178,7 +178,7 @@ int main(int argc, char* argv[]){
 	local.sin_port = htons(puerto);
 	local.sin_addr.s_addr = INADDR_ANY;
 
-    int bind = bind(mSocket, (struct sockaddr *)&local, sizeof(local))
+    int bind = bind(mSocket, (struct sockaddr *)&local, sizeof(local));
 	if (bind < 0)
 	{
 		perror("Error bind cliente");
@@ -215,7 +215,7 @@ int main(int argc, char* argv[]){
 	{
 		int socket;
 		request reqInfo;
-		get_request(socket_fd, &reqInfo);
+		get_request(&reqInfo, socket_fd);
         //Esta llamada deberia llamarse una sola vez cuando el server notifique 
         //los puertos vecinos del cliente
 		if (strncmp(reqInfo.type, "VECINOS", 8) == 0)

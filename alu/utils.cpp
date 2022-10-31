@@ -3,7 +3,7 @@
 // Un regalito, puede que quieran modificarla
 // Dado un arreglo de char str y un socket descriptor s, hace una lectura
 // bloqueante sobre s y llena el buffer str con los bytes leídos.
-int read_sock(char str[], int s) 
+int read_sock(int s) 
 {
     int n;
 	char str[MENSAJE_MAXIMO];
@@ -28,7 +28,7 @@ void get_request(struct request* req, int s)
    char request[MENSAJE_MAXIMO + 10];
     int n = recv(s, request, MENSAJE_MAXIMO + 10, 0);
     if (n < 0) { 
-    	perror("recibiendo");
+    	perror("Error recibiendo");
     }
 
     strncpy(req->type,((struct request*)request)->type, 10);
@@ -37,25 +37,25 @@ void get_request(struct request* req, int s)
 
 void send_request(int socket, struct request* req)
 {
-    int s = send(socket, (char *) req , MENSAJE_MAXIMO + 10, 0);
-    if (s < 0) { 
-    	perror("Error send_request: ");
-    }
-    
+	int s = send(socket, (char *) req , MENSAJE_MAXIMO + 10, 0);
+	if (s < 0) { 
+		perror("Error enviando");
+	}
+	
 }
 
 // Dado un vector de enteros que representan socket descriptors y un request,
 // envía a traves de todos los sockets la request.
-void broadcast(vector<int>& sockets, struct request* req)
+void broadcast(vector<vector<int>> &sockets, struct request* req)
 {
-    for (size_t i = 0; i < sockets.size(); i++)
-    {
-        for (size_t j = 0; j < sockets.size(); j++)
-        {
-            send_request(sockets[i][j], req);
-        }
-        
-    }   
+	for (size_t i = 0; i < sockets.size(); i++)
+	{
+		for (size_t j = 0; j < sockets.size(); j++)
+		{
+			send_request(sockets[i][j], req);
+		}
+		
+	}
 }
 
 void connection_handler(int socket_desc){
