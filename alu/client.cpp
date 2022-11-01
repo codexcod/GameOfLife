@@ -11,6 +11,9 @@ vector<int> vecinos;
 //Estado de vida de la celda
 bool estado;
 
+//Puerto del cliente
+int puerto;
+
 
 // Dado el estado actual de la celula y el estado de los vecinos en una ronda
 // computa el nuevo estado de la celula segun las reglas del juego
@@ -98,6 +101,10 @@ void escucharVecinos(vector<int> &socketsVecinos, int serverSocket)
         }
     }
 
+	
+	cout << "Puerto : " + puerto << endl;
+	cout << "Vecinos vivos: " + vecinosVivos << endl;
+
 	set_state(vecinosVivos);
 	notificarServer(serverSocket);
 }
@@ -163,7 +170,7 @@ int main(int argc, char* argv[]){
 		exit(1);
 	}
 
-	int puerto = atoi(argv[1]);
+	puerto = atoi(argv[1]);
 	local.sin_family = AF_INET;
 	local.sin_port = htons(puerto);
 	local.sin_addr.s_addr = INADDR_ANY;
@@ -200,18 +207,18 @@ int main(int argc, char* argv[]){
 		exit(1);
 	}
 
+	//Envia su puerto al servidor
+	request reqPuerto;
+	strncpy(reqPuerto.type, "PORT", 5);
+	strncpy(reqPuerto.msg, to_string(puerto).c_str(),5);
+	send_request(socket_fd, &reqPuerto);
+	cout << puerto << endl;
+
     //Envia su estado al servidor
 	request reqEstado;
 	strncpy(reqEstado.type, "ESTADO", 7);
 	strncpy(reqEstado.msg, estado ? "1" : "0", 2);
 	send_request(socket_fd, &reqEstado);
-
-	//Envia su puerto al servidor
-	request reqPuerto;
-	strncpy(reqPuerto.type, "PORT", 5);
-	cout << puerto << endl;
-	strncpy(reqPuerto.msg, to_string(puerto).c_str(),5);
-	send_request(socket_fd, &reqPuerto);
 
 	while (1)
 	{

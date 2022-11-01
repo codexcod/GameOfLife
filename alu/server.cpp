@@ -29,7 +29,9 @@ vector<int>{-1, -1}};
 // Servicio draw: En cada tick, imprime el mapa con el estado de cada celula 
 void draw()
 {
+    cout << "Tablero : " << endl;
     string tablero = "";
+    int contadorVidas = 0;
 	for (size_t i = 0; i < socketsClientes.size(); i++)
     {
 		tablero+= "\n";
@@ -40,9 +42,19 @@ void draw()
 			tablero+= " ";
 			tablero+= reqEstado.msg;
 			tablero+= " ";
+
+            if(strncmp(reqEstado.msg, "1", 2) == 0){
+                contadorVidas++;
+            }
         }   
     }
-	cout << tablero << endl;
+    if(contadorVidas > 0){
+        cout << tablero << endl;
+    }else{
+    	cout << "Ya no quedan mas celdas vivas" << endl;
+        exit(1);
+    }
+
 }
 
 // Servicio timer: Cada cierto intervalo de tiempo publica un tick. 
@@ -51,9 +63,11 @@ void timer()
 {
 	int contador = 0;
 
+    system("clear");
+    cout << "Comienza el juego" << endl;
+
 	while (1)
 	{
-        cout << "hola amigos" << endl;
 		draw();
 		string tick = "Tiempo " + to_string(contador);
 		char tiempo[tick.length() + 1];
@@ -68,23 +82,48 @@ void timer()
 }
 
 //Se agrega un nuevo socket hasta alcanzar la cantidad maxima
-bool server_accept_conns(int newSocket)
+void server_accept_conns(int s, sem_t& semaforo)
 {
-    int contador = 0;
-    socketsListos.push_back(newSocket);
-    if(socketsListos.size() == 9){
-        for (size_t i = 0; i < 3 ; i++)
+    struct sockaddr_in remote;
+	int t = sizeof(remote);
+	int socket;
+	for (size_t i = 0; i < 3;i++)
+	{
+        for (size_t j = 0; i < 3;j++)
         {
-            for (size_t j = 0; j < 3; j++)
+            if ((socket = accept(s, (struct sockaddr *)&remote, (socklen_t *)&t)) == -1)
             {
-                socketsClientes[i][j] = socketsListos[contador];
-                contador ++;
+                perror("Error aceptando cliente");
+                exit(1);
             }
+            cout << "New socket" + socket << endl;
+            socketsListos.push_back(socket);
+            sem_post(&semaforo);
         }
-        return true;
-    }
-    return false;
+	}  
 }
+
+bool llenarLista(){
+    if (socketsListos.size() == 9)
+	{
+		cout << "EL juego comenzara en 5 segundos" << endl;
+		sleep(5);
+		int contador = 0;
+		for (size_t i = 0; i < socketsClientes.size(); i++)
+		{
+			for (size_t j = 0; j < socketsClientes.size(); j++)
+			{
+				socketsClientes[i][j] = socketsListos[contador];
+				
+				contador++;
+			}
+		}
+		return true;
+	}
+
+	return false;
+}
+
 
 //Chequea que la posicion sea valida y la agrega al array de vecinos
 void calcularUbicacionVecino(int x, int y, int i, vector<vector<int>> &vecinos)
@@ -128,7 +167,6 @@ void notificarClientes()
 	{
 		for (size_t j = 0; j < socketsClientes.size(); j++)
 		{
-            cout << socketsClientes[i][j] << endl;
             //Se calcula las posiciones de los vecinos de cada casilla
 			vector<vector<int>> vecinos = getVecinos(i, j);
             //Se genera un string con los puertos de los clientes vecinos 
@@ -148,6 +186,9 @@ int main(void)
     struct sockaddr_in local;
     struct sockaddr_in remote;
     vector <thread> threads;
+
+    sem_t semaforoConexiones;
+	sem_init(&semaforoConexiones, 0, 0);
 
     s = socket(PF_INET, SOCK_STREAM, 0);
     if (s == -1) {
@@ -172,33 +213,36 @@ int main(void)
         exit(1);
     }
 
-    int t = sizeof(remote);
-    int socket;
-    for(;;){
-        socket = accept(s, (struct sockaddr*) &remote, (socklen_t*) &t);
-        if(socket == -1) {
-            perror("Error aceptando cliente");
-            exit(1);
-        }
-        threads.push_back(thread(connection_handler, socket));
-        if (server_accept_conns(socket))
+    cout << "Comenzo la conexion con clientes" << endl;
+
+    threads.push_back(thread(server_accept_conns, s, ref(semaforoConexiones)));
+
+    for (size_t i = 0;  i < 9; i++)
+	{
+		sem_wait(&semaforoConexiones);
+	}
+
+    cout << "Termino la conexion con clientes" << endl;
+
+    if (llenarLista())
+    {
+        for (size_t i = 0; i < socketsClientes.size(); i++)
         {
-            for (size_t i = 0; i < socketsClientes.size(); i++)
-			{
-				for (size_t j = 0; j < socketsClientes.size(); j++)
-				{
-					request requestCliente;
-					get_request(&requestCliente, socketsClientes[i][j]);
-					char puerto[sizeof(requestCliente.msg)];
-					strncpy(puerto, requestCliente.msg, sizeof(requestCliente.msg));
-					puertosClientes[i][j] = atoi(puerto);
-                    cout << puerto << endl;
-				}
-			}
-			notificarClientes();
-			threads.push_back(thread(timer));
+            for (size_t j = 0; j < socketsClientes.size(); j++)
+            {
+                request requestCliente;
+                get_request(&requestCliente, socketsClientes[i][j]);
+                char puerto[sizeof(requestCliente.msg)];
+                strncpy(puerto, requestCliente.msg, sizeof(requestCliente.msg));
+                puertosClientes[i][j] = atoi(puerto);
+                cout << "New Port: " << endl;
+                cout << puerto << endl;
+            }
         }
+        notificarClientes();
+        threads.push_back(thread(timer));
     }
+
 
     for (unsigned int i = 0; i < threads.size(); i++)
     {

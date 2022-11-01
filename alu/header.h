@@ -28,7 +28,7 @@
 #include<string>
 
 
-#define PORT 5039
+#define PORT 5053
 #define MENSAJE_MAXIMO  256
 #define MAX_CLIENTS 10
 #define CLIENT_READY "CL_OK\n"
