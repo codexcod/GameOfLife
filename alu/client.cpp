@@ -19,24 +19,22 @@ int puerto;
 // computa el nuevo estado de la celula segun las reglas del juego
 void set_state(int vecinosVivos)
 {
-	bool nuevoEstado;
-	if(vecinosVivos > 3)
-    {
-        estado = false;
-    }
-    if(vecinosVivos == 3) 
-    {
-        estado = true;
-    }
-	if(vecinosVivos < 2 ) 
-    {
-        estado = false;
-    }
-	if(vecinosVivos == 2 && estado) 
-    {
-        estado = true;
-    }
-
+	if (estado && vecinosVivos < 2)
+	{
+		estado = false;
+	}
+	if (estado && (vecinosVivos == 2 || vecinosVivos == 3))
+	{
+		estado = true;
+	}
+	if (estado && vecinosVivos > 3)
+	{
+		estado = false;
+	}
+	if (!estado && vecinosVivos == 3)
+	{
+		estado = true;
+	}
 }
 
 //Notificamos al server nuestro nuevo estado
@@ -100,10 +98,6 @@ void escucharVecinos(vector<int> &socketsVecinos, int serverSocket)
             vecinosVivos++;
         }
     }
-
-	
-	cout << "Puerto : " + puerto << endl;
-	cout << "Vecinos vivos: " + vecinosVivos << endl;
 
 	set_state(vecinosVivos);
 	notificarServer(serverSocket);

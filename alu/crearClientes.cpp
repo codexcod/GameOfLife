@@ -12,15 +12,18 @@ int main(int argc, char const *argv[])
 
     vector <thread> threads;
 
-    srand(time(0));
+    srand(time(NULL));
+
+    int max = 7000;
+    int min = 1000;
 
     //Se crean 9 clientes para llenar el tablero
-    for (size_t i = 0; i < 9; i++)
+    for (size_t i = 0; i < HORIZONTAL * VERTICAL; i++)
     {
-        threads.push_back(thread(cliente, (rand()%5000) + 1025));
+        threads.push_back(thread(cliente, (rand()% max + min)));
     }
 
-    for (unsigned int i = 0; i < 9; i++)
+    for (unsigned int i = 0; i < HORIZONTAL * VERTICAL; i++)
 	{
 		threads[i].join();
 	}

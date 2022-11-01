@@ -27,11 +27,11 @@
 #include <sstream>
 #include<string>
 
-
-#define PORT 5053
+#define VERTICAL  6
+#define PORT 5066
 #define MENSAJE_MAXIMO  256
-#define MAX_CLIENTS 10
-#define CLIENT_READY "CL_OK\n"
+#define HORIZONTAL  6
+
 
 using namespace std;
 
