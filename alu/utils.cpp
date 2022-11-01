@@ -30,7 +30,6 @@ void get_request(struct request* req, int s)
     if (n < 0) { 
     	perror("Error recibiendo");
     }
-
     strncpy(req->type,((struct request*)request)->type, 10);
     strncpy(req->msg, ((struct request*)request)->msg, MENSAJE_MAXIMO); 
 }

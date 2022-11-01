@@ -23,11 +23,15 @@
 #include <mutex>
 #include <sys/wait.h>
 #include <cassert>
-#define PORT 5030
+#include <iostream>
+#include <sstream>
+#include<string>
+
+
+#define PORT 5039
 #define MENSAJE_MAXIMO  256
 #define MAX_CLIENTS 10
 #define CLIENT_READY "CL_OK\n"
-#define CANT_CLIENTS 9
 
 using namespace std;
 

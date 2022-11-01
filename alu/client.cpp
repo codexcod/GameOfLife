@@ -40,7 +40,7 @@ void set_state(int vecinosVivos)
 void notificarServer(int socketServer)
 {
 	request reqEstado;
-	strncpy(reqEstado.type, "ESTADO", 14);
+	strncpy(reqEstado.type, "ESTADO", 7);
 	strncpy(reqEstado.msg, estado ? "1" : "0", 2);
 	send_request(socketServer, &reqEstado);
 }
@@ -155,16 +155,6 @@ int main(int argc, char* argv[]){
 	vector<int> socketsHablar;
 	vector<int> socketsEscuchar;
 
-    int socket_fd = socket(PF_INET, SOCK_STREAM, 0);
-	if (socket_fd  == -1)
-	{
-		perror("Error creando socket server");
-		exit(1);
-	}
-
-	remote.sin_family = AF_INET;
-	remote.sin_port = htons(PORT);
-	inet_pton(AF_INET, "127.0.0.1", &(remote.sin_addr));
 
     mSocket = socket(PF_INET, SOCK_STREAM, 0);
 	if (mSocket == -1)
@@ -178,8 +168,8 @@ int main(int argc, char* argv[]){
 	local.sin_port = htons(puerto);
 	local.sin_addr.s_addr = INADDR_ANY;
 
-    int bind = bind(mSocket, (struct sockaddr *)&local, sizeof(local));
-	if (bind < 0)
+    int localLink = bind(mSocket, (struct sockaddr *)&local, sizeof(local));
+	if (localLink < 0)
 	{
 		perror("Error bind cliente");
 		exit(1);
@@ -192,6 +182,17 @@ int main(int argc, char* argv[]){
 		exit(1);
 	}
 
+	int socket_fd = socket(PF_INET, SOCK_STREAM, 0);
+	if (socket_fd  == -1)
+	{
+		perror("Error creando socket server");
+		exit(1);
+	}
+
+	remote.sin_family = AF_INET;
+	remote.sin_port = htons(PORT);
+	inet_pton(AF_INET, "127.0.0.1", &(remote.sin_addr));
+
 	int s = connect(socket_fd, (struct sockaddr *)&remote, sizeof(remote));
 	if (s == -1)
 	{
@@ -199,17 +200,18 @@ int main(int argc, char* argv[]){
 		exit(1);
 	}
 
-    //Envia su puerto al servidor
-	request reqPuerto;
-	strncpy(reqPuerto.type, "PUERTA", 7);
-	strncpy(reqPuerto.msg, to_string(puerto).c_str(), sizeof(to_string(puerto).c_str()));
-	send_request(socket_fd, &reqPuerto);
-
     //Envia su estado al servidor
 	request reqEstado;
-	strncpy(reqEstado.type, "ESTADO", 14);
+	strncpy(reqEstado.type, "ESTADO", 7);
 	strncpy(reqEstado.msg, estado ? "1" : "0", 2);
 	send_request(socket_fd, &reqEstado);
+
+	//Envia su puerto al servidor
+	request reqPuerto;
+	strncpy(reqPuerto.type, "PORT", 5);
+	cout << puerto << endl;
+	strncpy(reqPuerto.msg, to_string(puerto).c_str(),5);
+	send_request(socket_fd, &reqPuerto);
 
 	while (1)
 	{

@@ -53,13 +53,14 @@ void timer()
 
 	while (1)
 	{
+        cout << "hola amigos" << endl;
 		draw();
 		string tick = "Tiempo " + to_string(contador);
 		char tiempo[tick.length() + 1];
 		strcpy(tiempo, tick.c_str());
 		request req;
 		strncpy(req.msg, tiempo, sizeof(tiempo));
-		strncpy(req.type, "TICK", 10);
+		strncpy(req.type, "TICK", 5);
 		broadcast(socketsClientes, &req);
 		contador++;
 		sleep(5);
@@ -69,22 +70,24 @@ void timer()
 //Se agrega un nuevo socket hasta alcanzar la cantidad maxima
 bool server_accept_conns(int newSocket)
 {
+    int contador = 0;
     socketsListos.push_back(newSocket);
     if(socketsListos.size() == 9){
         for (size_t i = 0; i < 3 ; i++)
         {
             for (size_t j = 0; j < 3; j++)
             {
-                socketsClientes[i][j] = socketsListos[i*j];
-                return true;
+                socketsClientes[i][j] = socketsListos[contador];
+                contador ++;
             }
         }
+        return true;
     }
     return false;
 }
 
 //Chequea que la posicion sea valida y la agrega al array de vecinos
-int calcularUbicacionVecino(int x, int y, int i, vector<vector<int>> &vecinos)
+void calcularUbicacionVecino(int x, int y, int i, vector<vector<int>> &vecinos)
 {
         int xVecino = x + vecinosPosibles[i][0];
         int yVecino = y + vecinosPosibles[i][1];
@@ -125,6 +128,7 @@ void notificarClientes()
 	{
 		for (size_t j = 0; j < socketsClientes.size(); j++)
 		{
+            cout << socketsClientes[i][j] << endl;
             //Se calcula las posiciones de los vecinos de cada casilla
 			vector<vector<int>> vecinos = getVecinos(i, j);
             //Se genera un string con los puertos de los clientes vecinos 
@@ -188,10 +192,11 @@ int main(void)
 					char puerto[sizeof(requestCliente.msg)];
 					strncpy(puerto, requestCliente.msg, sizeof(requestCliente.msg));
 					puertosClientes[i][j] = atoi(puerto);
+                    cout << puerto << endl;
 				}
 			}
 			notificarClientes();
-			threads.push_back(thread(timer, ref(socketsClientes)));
+			threads.push_back(thread(timer));
         }
     }
 
