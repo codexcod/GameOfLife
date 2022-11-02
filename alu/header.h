@@ -27,10 +27,10 @@
 #include <sstream>
 #include<string>
 
-#define VERTICAL  6
-#define PORT 5066
+#define VERTICAL  3
+#define PORT 5073
 #define MENSAJE_MAXIMO  256
-#define HORIZONTAL  6
+#define HORIZONTAL  3
 
 
 using namespace std;

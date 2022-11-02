@@ -23,7 +23,105 @@ vector<int>{-1, 0},
 vector<int>{0, -1},
 vector<int>{-1, -1}};
 
+//Variable que dice si el juego esta corriendo o no
+bool jugando;
 
+//Chequea que la posicion sea valida y la agrega al array de vecinos
+void calcularUbicacionVecino(int x, int y, int i, vector<vector<int>> &vecinos)
+{
+        int xVecino = x + ubicacionesVecinos[i][0];
+        int yVecino = y + ubicacionesVecinos[i][1];
+        if (xVecino > -1 && yVecino > -1 && xVecino < socketsClientes.size() && yVecino < VERTICAL)
+        {
+            vecinos.push_back(vector<int>{xVecino, yVecino});
+        }
+}
+
+//Se calculan las posiciones de los posibles vecinos
+vector<vector<int>> getVecinos(int x, int y)
+{
+	vector<vector<int>> vecinos;
+    for(size_t i = 0; i < 8; i++){
+        calcularUbicacionVecino(x, y, i, vecinos);
+    }
+	return vecinos;
+}
+
+//Se genera el string que funcionara como mensaje para que el cliente conozca sus vecinos
+string stirngVecinos(vector<vector<int>> &vecinos)
+{
+	string vecinosString = "";
+
+	for (int i = 0; i < vecinos.size(); ++i)
+	{
+		vecinosString += "-";
+		vecinosString += to_string(puertosClientes[vecinos[i][0]][vecinos[i][1]]);
+	}
+	return vecinosString;
+}
+
+//Por cada cliente se recolecta la informacion de sus vecinos y se envia a cada uno
+void notificarClientes()
+{
+	for (size_t i = 0; i < socketsClientes.size(); i++)
+	{
+		for (size_t j = 0; j < socketsClientes[i].size(); j++)
+		{
+            //Se calcula las posiciones de los vecinos de cada casilla
+			vector<vector<int>> vecinos = getVecinos(i, j);
+            //Se genera un string con los puertos de los clientes vecinos 
+			string vecinosString = stirngVecinos(vecinos);
+            //Se envia la info a cada cliente
+			request req;
+			strncpy(req.type, "VECINOS", 8);
+			strncpy(req.msg, vecinosString.c_str(), MENSAJE_MAXIMO);
+			send_request(socketsClientes[i][j], &req);
+		}
+	}
+}
+
+
+void esperarNuevoJuego(sem_t& semaforo)
+{
+    int cantidadCeldas = 0; 
+    while(!jugando)
+    {
+        sleep(5);
+        cantidadCeldas = socketsClientes.size() * VERTICAL;
+        cout << "Esperando para nuevo juego" << endl;
+        cout << ( socketsListos.size() - cantidadCeldas) / VERTICAL << endl;
+
+        int contador = VERTICAL * socketsClientes.size();
+
+        if(( socketsListos.size() - cantidadCeldas) / VERTICAL > 0)
+        {
+            for (size_t i = 0; i < (cantidadCeldas - socketsListos.size()) / VERTICAL; i++)
+            {
+                vector<int> nuevaFila;
+                vector<int> nuevaFilaPorts;
+                for (size_t j = 0; j < VERTICAL; j++)
+                {
+                    nuevaFila.push_back(socketsListos[contador]);
+                    cout << socketsListos[contador] << endl;
+                    request requestCliente;
+                    get_request(&requestCliente, socketsListos[contador]);
+                    char puerto[sizeof(requestCliente.msg)];
+                    strncpy(puerto, requestCliente.msg, sizeof(requestCliente.msg));
+                    
+                    nuevaFilaPorts.push_back(atoi(puerto));
+                    cout << puerto << endl;
+                    contador++;
+                }
+                socketsClientes.push_back(nuevaFila);
+                puertosClientes.push_back(nuevaFilaPorts);
+                
+            }
+            notificarClientes();
+            jugando = true;
+        }
+    }
+    sem_post(&semaforo);
+}
 
 // Servicio draw: En cada tick, imprime el mapa con el estado de cada celula 
 void draw()
@@ -31,10 +129,10 @@ void draw()
     cout << "Tablero : " << endl;
     string tablero = "";
     int contadorVidas = 0;
-	for (size_t i = 0; i < HORIZONTAL; i++)
+	for (size_t i = 0; i < socketsClientes.size(); i++)
     {
 		tablero+= "\n";
-        for (size_t j = 0; j < VERTICAL; j++)
+        for (size_t j = 0; j < socketsClientes[i].size(); j++)
         {
 			request reqEstado;
             get_request(&reqEstado, socketsClientes[i][j]);
@@ -53,7 +151,15 @@ void draw()
     }else{
         cout << tablero << endl;
     	cout << "Ya no quedan mas celdas vivas" << endl;
-        exit(1);
+        jugando = false;
+
+        sem_t semaforoNuevoJuego;
+	    sem_init(&semaforoNuevoJuego, 0, 0);
+
+        thread t = thread(esperarNuevoJuego, ref(semaforoNuevoJuego));
+        t.join();
+
+        sem_wait(&semaforoNuevoJuego);
     }
 
 }
@@ -65,7 +171,7 @@ void timer()
 	int contador = 0;
     system("clear");
     cout << "Comienza el juego" << endl;
-
+    jugando = true;
 	while (1)
 	{
 		draw();
@@ -101,6 +207,25 @@ void server_accept_conns(int s, sem_t& semaforo)
             socketsListos.push_back(socket);
             sem_post(&semaforo);
         }
+	}  
+}
+
+//Se espera que se acepten todas las conexiones entrantes
+void server_accept_new_conns(int s)
+{
+    struct sockaddr_in remote;
+	int t = sizeof(remote);
+	int socket;
+	for (;;)
+	{
+        if ((socket = accept(s, (struct sockaddr *)&remote, (socklen_t *)&t)) == -1)
+        {
+            perror("Error aceptando cliente");
+            exit(1);
+        }
+        cout << "New socket" << endl;
+        cout << socket << endl;
+        socketsListos.push_back(socket);
 	}  
 }
 
@@ -142,62 +267,6 @@ bool llenarLista(){
 	}
 
 	return false;
-}
-
-
-//Chequea que la posicion sea valida y la agrega al array de vecinos
-void calcularUbicacionVecino(int x, int y, int i, vector<vector<int>> &vecinos)
-{
-        int xVecino = x + ubicacionesVecinos[i][0];
-        int yVecino = y + ubicacionesVecinos[i][1];
-        if (xVecino > -1 && yVecino > -1 && xVecino < HORIZONTAL && yVecino < VERTICAL)
-        {
-            vecinos.push_back(vector<int>{xVecino, yVecino});
-        }
-}
-
-//Se calculan las posiciones de los posibles vecinos
-vector<vector<int>> getVecinos(int x, int y)
-{
-	vector<vector<int>> vecinos;
-    for(size_t i = 0; i < 8; i++){
-        calcularUbicacionVecino(x, y, i, vecinos);
-    }
-	return vecinos;
-}
-
-//Se genera el string que funcionara como mensaje para que el cliente conozca sus vecinos
-string stirngVecinos(vector<vector<int>> &vecinos)
-{
-	string vecinosString = "";
-
-	for (int i = 0; i < vecinos.size(); ++i)
-	{
-		vecinosString += "-";
-		vecinosString += to_string(puertosClientes[vecinos[i][0]][vecinos[i][1]]);
-	}
-	return vecinosString;
-}
-
-
-//Por cada cliente se recolecta la informacion de sus vecinos y se envia a cada uno
-void notificarClientes()
-{
-	for (size_t i = 0; i < HORIZONTAL; i++)
-	{
-		for (size_t j = 0; j < VERTICAL; j++)
-		{
-            //Se calcula las posiciones de los vecinos de cada casilla
-			vector<vector<int>> vecinos = getVecinos(i, j);
-            //Se genera un string con los puertos de los clientes vecinos 
-			string vecinosString = stirngVecinos(vecinos);
-            //Se envia la info a cada cliente
-			request req;
-			strncpy(req.type, "VECINOS", 8);
-			strncpy(req.msg, vecinosString.c_str(), MENSAJE_MAXIMO);
-			send_request(socketsClientes[i][j], &req);
-		}
-	}
 }
 
 int main(void)
@@ -265,6 +334,8 @@ int main(void)
         notificarClientes();
         //Comienza el juego
         threads.push_back(thread(timer));
+
+        threads.push_back(thread(server_accept_new_conns, s));
     }
 
 

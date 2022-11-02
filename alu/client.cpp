@@ -47,7 +47,7 @@ void notificarServer(int socketServer)
 }
 
 //Aceptamos las conexiones entrantes de los vecinos
-int aceptarConexiones(sockaddr_in addr, vector<int> &socketsEscuchar)
+void aceptarConexiones(sockaddr_in addr, vector<int> &socketsEscuchar)
 {
 	int t = sizeof(addr);
 	for (;;)
@@ -223,10 +223,14 @@ int main(int argc, char* argv[]){
         //los puertos vecinos del cliente
 		if (strncmp(reqInfo.type, "VECINOS", 8) == 0)
 		{
+			vecinos.clear();
+			socketsHablar.clear();
+			socketsEscuchar.clear();	
             //Separa el string que recibe el servidor para conocer los puertos vecinos
 			getPuertosVecinos(string(reqInfo.msg), vecinos);
 			threads.push_back(thread(conectarVecinos, ref(socketsHablar)));
 			threads.push_back(thread(aceptarConexiones, local, ref(socketsEscuchar)));
+
 		}
 
         //Cada 5 sec el servidor envia un tick en el cual el cliente actualiza su estado
