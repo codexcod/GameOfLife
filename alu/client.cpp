@@ -19,20 +19,16 @@ int puerto;
 // computa el nuevo estado de la celula segun las reglas del juego
 void set_state(int vecinosVivos)
 {
-	if (estado && vecinosVivos < 2)
-	{
+	if (vecinosVivos > 3) {
 		estado = false;
 	}
-	if (estado && (vecinosVivos == 2 || vecinosVivos == 3))
-	{
+	if (vecinosVivos < 2) {
+		estado = false;
+	}
+	if (vecinosVivos == 3) {
 		estado = true;
 	}
-	if (estado && vecinosVivos > 3)
-	{
-		estado = false;
-	}
-	if (!estado && vecinosVivos == 3)
-	{
+	if (vecinosVivos == 2 && estado) {
 		estado = true;
 	}
 }
