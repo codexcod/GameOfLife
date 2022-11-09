@@ -78,6 +78,8 @@ void notificarClientes()
 			send_request(socketsClientes[i][j], &req);
 		}
 	}
+    cout << "Termina la notifiacion de clientes" << endl;
+    sleep(5);
 }
 
 
@@ -95,13 +97,15 @@ void esperarNuevoJuego(sem_t& semaforo)
 
         if(( socketsListos.size() - cantidadCeldas) / VERTICAL > 0)
         {
-            for (size_t i = 0; i < (cantidadCeldas - socketsListos.size()) / VERTICAL; i++)
+            for (size_t i = 0; i < (socketsListos.size() - cantidadCeldas) / VERTICAL; i++)
             {
+                cout << i << endl;
                 vector<int> nuevaFila;
                 vector<int> nuevaFilaPorts;
                 for (size_t j = 0; j < VERTICAL; j++)
                 {
                     nuevaFila.push_back(socketsListos[contador]);
+                    cout << contador << endl;
                     cout << socketsListos[contador] << endl;
                     request requestCliente;
                     get_request(&requestCliente, socketsListos[contador]);
@@ -116,6 +120,7 @@ void esperarNuevoJuego(sem_t& semaforo)
                 puertosClientes.push_back(nuevaFilaPorts);
                 
             }
+            sleep(5);
             notificarClientes();
             jugando = true;
         }

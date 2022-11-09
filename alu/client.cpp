@@ -222,6 +222,7 @@ int main(int argc, char* argv[]){
 			vecinos.clear();
 			socketsHablar.clear();
 			socketsEscuchar.clear();	
+			estado = atoi(argv[1]) % 2 == 0;
             //Separa el string que recibe el servidor para conocer los puertos vecinos
 			getPuertosVecinos(string(reqInfo.msg), vecinos);
 			threads.push_back(thread(conectarVecinos, ref(socketsHablar)));

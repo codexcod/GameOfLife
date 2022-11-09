@@ -50,7 +50,7 @@ void broadcast(vector<vector<int>> &sockets, struct request* req)
 {
 	for (size_t i = 0; i < sockets.size(); i++)
 	{
-		for (size_t j = 0; j < sockets.size(); j++)
+		for (size_t j = 0; j < sockets[i].size(); j++)
 		{
 			send_request(sockets[i][j], req);
 		}
