@@ -21,14 +21,11 @@ void set_state(int vecinosVivos)
 {
 	if (vecinosVivos > 3) {
 		estado = false;
-	}
-	if (vecinosVivos < 2) {
+	} else if (vecinosVivos < 2) {
 		estado = false;
-	}
-	if (vecinosVivos == 3) {
+	} else if (vecinosVivos == 3) {
 		estado = true;
-	}
-	if (vecinosVivos == 2 && estado) {
+	} else if (vecinosVivos == 2 && estado) {
 		estado = true;
 	}
 }
