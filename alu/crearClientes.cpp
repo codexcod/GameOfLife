@@ -10,23 +10,34 @@ void cliente(int random){
 int main(int argc, char const *argv[])
 {
 
-    vector <thread> threads;
-
     srand(time(NULL));
 
     int max = 7000;
     int min = 1000;
 
-    //Se crean 9 clientes para llenar el tablero
+    int pid = -1;
+
+    //Se crean clientes para llenar el tablero
     for (size_t i = 0; i < HORIZONTAL * VERTICAL; i++)
     {
-        threads.push_back(thread(cliente, (rand()% max + min)));
+        pid = -1;
+        int random = rand()% max + min; 
+        pid = fork();
+        if (pid == 0) {
+            cliente(random);
+            return 0;
+        }
+
     }
 
-    for (unsigned int i = 0; i < HORIZONTAL * VERTICAL; i++)
-	{
-		threads[i].join();
-	}
+    if (pid > 0)
+    {
+        for (size_t i = 0; i < HORIZONTAL * VERTICAL; i++) {
+            wait(NULL); // Espera a clientes 
+        }
+        exit(0);
+    }
+    
     
     return 0;
 }
