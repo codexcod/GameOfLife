@@ -61,7 +61,7 @@ string stirngVecinos(vector<vector<int>> &vecinos)
 }
 
 //Por cada cliente se recolecta la informacion de sus vecinos y se envia a cada uno
-void notificarClientes()
+void notificarClientes(sem_t& sem)
 {
 	for (size_t i = 0; i < socketsClientes.size(); i++)
 	{
@@ -79,7 +79,7 @@ void notificarClientes()
 		}
 	}
     cout << "Termina la notifiacion de clientes" << endl;
-    sleep(5);
+    sem_post(&sem);
 }
 
 
@@ -99,20 +99,18 @@ void esperarNuevoJuego(sem_t& semaforo)
         {
             for (size_t i = 0; i < (socketsListos.size() - cantidadCeldas) / VERTICAL; i++)
             {
-                cout << i << endl;
                 vector<int> nuevaFila;
                 vector<int> nuevaFilaPorts;
                 for (size_t j = 0; j < VERTICAL; j++)
                 {
                     nuevaFila.push_back(socketsListos[contador]);
-                    cout << contador << endl;
-                    cout << socketsListos[contador] << endl;
                     request requestCliente;
                     get_request(&requestCliente, socketsListos[contador]);
                     char puerto[sizeof(requestCliente.msg)];
                     strncpy(puerto, requestCliente.msg, sizeof(requestCliente.msg));
                     
                     nuevaFilaPorts.push_back(atoi(puerto));
+                    cout << "New Port" << endl;
                     cout << puerto << endl;
                     contador++;
                 }
@@ -121,7 +119,11 @@ void esperarNuevoJuego(sem_t& semaforo)
                 
             }
             sleep(5);
-            notificarClientes();
+            sem_t sem;
+            sem_init(&sem, 0, 0);
+            notificarClientes(ref(sem));
+            sem_wait(&sem);
+
             jugando = true;
         }
     }
@@ -336,7 +338,10 @@ int main(void)
 
         sleep(5);
 
-        notificarClientes();
+        sem_t sem;
+        sem_init(&sem, 0, 0);
+        notificarClientes(ref(sem));
+        sem_wait(&sem);
         //Comienza el juego
         threads.push_back(thread(timer));
 

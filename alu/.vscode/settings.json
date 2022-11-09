@@ -5,6 +5,7 @@
         "sstream": "cpp",
         "iostream": "cpp",
         "ostream": "cpp",
-        "mutex": "cpp"
+        "mutex": "cpp",
+        "functional": "cpp"
     }
 }

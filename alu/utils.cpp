@@ -40,6 +40,7 @@ void send_request(int socket, struct request* req)
 	int s = send(socket, (char *) req , MENSAJE_MAXIMO + 10, 0);
 	if (s < 0) { 
 		perror("Error enviando");
+        exit(1);
 	}
 	
 }
