@@ -307,7 +307,7 @@ int main(void)
 
     cout << "Comenzo la conexion con clientes" << endl;
 
-    threads.push_back(thread(server_accept_conns, s, ref(semaforoConexiones)));
+    server_accept_conns(s, ref(semaforoConexiones));
 
     for (size_t i = 0;  i < VERTICAL * HORIZONTAL; i++)
 	{
@@ -320,7 +320,7 @@ int main(void)
     {
         cout << "Comienza la coleccion de  puertos" << endl;
 
-        threads.push_back(thread(server_get_ports, ref(semaforoPorts)));
+        server_get_ports(ref(semaforoPorts));
 
          for (size_t i = 0;  i < VERTICAL * HORIZONTAL; i++)
         {
