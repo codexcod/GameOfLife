@@ -30,6 +30,9 @@ void get_request(struct request* req, int s)
     if (n < 0) { 
     	perror("Error recibiendo");
         exit(1);
+    } else if (n == 0) {
+        perror("Se ha perdido la conexion con un cliente, cerrando el servidor...");
+        exit(1);
     }
     strncpy(req->type,((struct request*)request)->type, 10);
     strncpy(req->msg, ((struct request*)request)->msg, MENSAJE_MAXIMO); 
