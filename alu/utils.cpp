@@ -56,6 +56,7 @@ void broadcast(vector<vector<int>> &sockets, struct request* req)
 	{
 		for (size_t j = 0; j < sockets[i].size(); j++)
 		{
+            cout << to_string(sockets[i][j]) << endl;
 			send_request(sockets[i][j], req);
 		}
 		

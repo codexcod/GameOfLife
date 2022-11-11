@@ -19,6 +19,13 @@ int puerto;
 // computa el nuevo estado de la celula segun las reglas del juego
 void set_state(int vecinosVivos)
 {
+	string out = "";
+	int cantidadVecinos = vecinos.size();
+	out +=  to_string(puerto) + " " + to_string(vecinosVivos) + " v " + to_string(cantidadVecinos) + " e " +  to_string(estado);
+	for (int i = 0; i < cantidadVecinos; ++i){
+		out += "-";
+		out += to_string(vecinos[i]);
+	}
 	if (vecinosVivos > 3) {
 		estado = false;
 	} else if (vecinosVivos < 2) {
@@ -28,6 +35,9 @@ void set_state(int vecinosVivos)
 	} else if (vecinosVivos == 2 && estado) {
 		estado = true;
 	}
+	out += "ne";
+	out += to_string(estado);
+	cout << out << endl;
 }
 
 //Notificamos al server nuestro nuevo estado
@@ -97,7 +107,7 @@ void escucharVecinos(vector<int> &socketsVecinos, int serverSocket)
 }
 
 //El cliente envia su estado a sus vecinos 
-void notificarVecinos(vector<int> &socketsHablar)
+void notificarVecinos(vector<int> &socketsHablar, sem_t& semaforo)
 {
 	for (int i = 0; i < socketsHablar.size(); ++i)
 	{
@@ -106,6 +116,7 @@ void notificarVecinos(vector<int> &socketsHablar)
         strncpy(reqEstado.msg, estado ? "1" : "0", 2);
         send_request(socketsHablar[i], &reqEstado);
 	}
+	sem_post(&semaforo);
 }
 
 //Por cada puerto genera la conexion con sus vecinos
@@ -148,6 +159,11 @@ int main(int argc, char* argv[]){
 
 	vector<int> socketsHablar;
 	vector<int> socketsEscuchar;
+
+	sem_t semafotoHablar;
+	sem_t semaforoEscuchar;
+	sem_init(&semafotoHablar, 0, 0);
+	sem_init(&semaforoEscuchar, 0, 0);
 
 
     mSocket = socket(PF_INET, SOCK_STREAM, 0);
@@ -230,7 +246,9 @@ int main(int argc, char* argv[]){
         //Cada 5 sec el servidor envia un tick en el cual el cliente actualiza su estado
 		if (strncmp(reqInfo.type, "TICK", 5) == 0)
 		{
-			threads.push_back(thread(notificarVecinos, ref(socketsHablar)));
+
+			threads.push_back(thread(notificarVecinos, ref(socketsHablar), ref(semafotoHablar)));
+			sem_wait(&semafotoHablar);
 			threads.push_back(thread(escucharVecinos, ref(socketsEscuchar), socket_fd));
 		}
 	}
