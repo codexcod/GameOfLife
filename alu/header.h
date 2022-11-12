@@ -28,7 +28,7 @@
 #include<string>
 
 #define VERTICAL  3
-#define PORT 5072
+#define PORT 5074
 #define MENSAJE_MAXIMO  256
 #define HORIZONTAL  3
 

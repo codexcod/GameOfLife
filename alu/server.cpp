@@ -82,8 +82,8 @@ void notificarClientes()
     sleep(5);
 }
 
-
-void esperarNuevoJuego(sem_t& semaforo)
+//Una vez terminado un juego, se espera que se conecten la cantidad sufiente de jugadores para agregar una nueva fila al final
+void esperarNuevoJuego()
 {
     int cantidadCeldas = 0; 
     while(!jugando)
@@ -93,8 +93,10 @@ void esperarNuevoJuego(sem_t& semaforo)
         cout << "Esperando para nuevo juego" << endl;
         cout << ( socketsListos.size() - cantidadCeldas) / VERTICAL << endl;
 
+        //Cantidad de clientes conectados
         int contador = VERTICAL * socketsClientes.size();
 
+        //Chekeamos que tengamos la cantidad de jugadores suficiente para agregar minimo una fila
         if(( socketsListos.size() - cantidadCeldas) / VERTICAL > 0)
         {
             for (size_t i = 0; i < (socketsListos.size() - cantidadCeldas) / VERTICAL; i++)
@@ -114,16 +116,18 @@ void esperarNuevoJuego(sem_t& semaforo)
                     cout << puerto << endl;
                     contador++;
                 }
+                //Agregamos las nuevas filas de clientes y lo agregamos al vector de puertos
                 socketsClientes.push_back(nuevaFila);
                 puertosClientes.push_back(nuevaFilaPorts);
                 
             }
+
+            //Notificamos nuevamente a los clientes ya que los vecinos se van a actualizar y su estado se va a reiniciar
             notificarClientes();
 
             jugando = true;
         }
     }
-    sem_post(&semaforo);
 }
 
 // Servicio draw: En cada tick, imprime el mapa con el estado de cada celula 
@@ -149,6 +153,8 @@ void draw()
         }   
         tablero+= "\n";
     }
+
+    //Si no quedan celulas vivas termina el juego y espera a nuevos jugadores
     if(contadorVidas > 0){
         cout << tablero << endl;
     }else{
@@ -156,12 +162,8 @@ void draw()
     	cout << "Ya no quedan mas celdas vivas" << endl;
         jugando = false;
 
-        sem_t semaforoNuevoJuego;
-	    sem_init(&semaforoNuevoJuego, 0, 0);
+        esperarNuevoJuego();
 
-        esperarNuevoJuego(ref(semaforoNuevoJuego));
-
-        sem_wait(&semaforoNuevoJuego);
     }
 
 }
@@ -252,6 +254,7 @@ void server_get_ports(sem_t& semaforo)
         }
 }
 
+//Paso la lista de sockets listos a la mariz de clientes
 bool llenarLista(){
     if (socketsListos.size() == VERTICAL * HORIZONTAL)
 	{
@@ -338,6 +341,7 @@ int main(void)
         //Comienza el juego
         threads.push_back(thread(timer));
 
+        //Agregamos un listener que escuche a los clientes que se quieran unir para el proximo juego
         threads.push_back(thread(server_accept_new_conns, s));
     }
 

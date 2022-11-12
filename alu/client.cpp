@@ -19,6 +19,7 @@ int puerto;
 // computa el nuevo estado de la celula segun las reglas del juego
 void set_state(int vecinosVivos)
 {
+	//Esto es solo un string que printeamos para verificar que todo este andando correctamente
 	string out = "";
 	int cantidadVecinos = vecinos.size();
 	out +=  to_string(puerto) + " " + to_string(vecinosVivos) + " v " + to_string(cantidadVecinos) + " e " +  to_string(estado);
@@ -26,6 +27,8 @@ void set_state(int vecinosVivos)
 		out += "-";
 		out += to_string(vecinos[i]);
 	}
+
+	//Reglas del juego
 	if (vecinosVivos > 3) {
 		estado = false;
 	} else if (vecinosVivos < 2) {
@@ -35,6 +38,8 @@ void set_state(int vecinosVivos)
 	} else if (vecinosVivos == 2 && estado) {
 		estado = true;
 	}
+
+	
 	out += "ne";
 	out += to_string(estado);
 	cout << out << endl;
@@ -128,6 +133,7 @@ void conectarVecinos(vector<int> &socketsHablar)
 	}
 }
 
+//El cliente recibe un string con todos sus puertos vecinos y lo agrega a su lista de puertos
 void getPuertosVecinos(string puertosVecinos, vector<int> &puertos)
 {
 	const char separador = '-';
