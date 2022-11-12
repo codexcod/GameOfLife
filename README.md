@@ -1,15 +1,19 @@
-# GameOfLife
+# :video_game: Conway's Game of life using sockets in C++ :video_game:
 
-![ddzf6mg-77fbfdeb-c694-4cc4-a739-a008d4d298d8](https://user-images.githubusercontent.com/68394259/199624827-c724e954-d9af-4f87-8fe1-b84c84d82ab2.jpg)
+# Instructions:
 
 ## 1. Ejecutar Maker
 
-./maker
+> ./maker.sh
 
 ## 2. En una terminal, ejecutar Server
 
-./server
+> ./server
 
-## En otra terminal, ejecutar creador de clientes
+## 3. En otra terminal, ejecutar creador de clientes
 
-./creador
+> ./creador
+
+## 4. Una vez que el juego haya terminado agrega nuevos clientes para agrandar el tablero!
+
+> ./creador
