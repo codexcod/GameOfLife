@@ -61,7 +61,7 @@ string stirngVecinos(vector<vector<int>> &vecinos)
 }
 
 //Por cada cliente se recolecta la informacion de sus vecinos y se envia a cada uno
-void notificarClientes(sem_t& sem)
+void notificarClientes()
 {
 	for (size_t i = 0; i < socketsClientes.size(); i++)
 	{
@@ -79,7 +79,7 @@ void notificarClientes(sem_t& sem)
 		}
 	}
     cout << "Termina la notifiacion de clientes" << endl;
-    sem_post(&sem);
+    sleep(5);
 }
 
 
@@ -118,11 +118,7 @@ void esperarNuevoJuego(sem_t& semaforo)
                 puertosClientes.push_back(nuevaFilaPorts);
                 
             }
-            sleep(5);
-            sem_t sem;
-            sem_init(&sem, 0, 0);
-            notificarClientes(ref(sem));
-            sem_wait(&sem);
+            notificarClientes();
 
             jugando = true;
         }
@@ -163,8 +159,7 @@ void draw()
         sem_t semaforoNuevoJuego;
 	    sem_init(&semaforoNuevoJuego, 0, 0);
 
-        thread t = thread(esperarNuevoJuego, ref(semaforoNuevoJuego));
-        t.join();
+        esperarNuevoJuego(ref(semaforoNuevoJuego));
 
         sem_wait(&semaforoNuevoJuego);
     }
@@ -338,10 +333,8 @@ int main(void)
 
         sleep(5);
 
-        sem_t sem;
-        sem_init(&sem, 0, 0);
-        notificarClientes(ref(sem));
-        sem_wait(&sem);
+
+        notificarClientes();
         //Comienza el juego
         threads.push_back(thread(timer));
 

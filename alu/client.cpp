@@ -217,11 +217,6 @@ int main(int argc, char* argv[]){
 	send_request(socket_fd, &reqPuerto);
 	cout << puerto << endl;
 
-    //Envia su estado al servidor
-	request reqEstado;
-	strncpy(reqEstado.type, "ESTADO", 7);
-	strncpy(reqEstado.msg, estado ? "1" : "0", 2);
-	send_request(socket_fd, &reqEstado);
 
 	while (1)
 	{
@@ -241,6 +236,12 @@ int main(int argc, char* argv[]){
 			threads.push_back(thread(conectarVecinos, ref(socketsHablar)));
 			threads.push_back(thread(aceptarConexiones, local, ref(socketsEscuchar)));
 
+			//Envia su estado al servidor
+			request reqEstado;
+			strncpy(reqEstado.type, "ESTADO", 7);
+			strncpy(reqEstado.msg, estado ? "1" : "0", 2);
+			send_request(socket_fd, &reqEstado);
+
 		}
 
         //Cada 5 sec el servidor envia un tick en el cual el cliente actualiza su estado
@@ -249,6 +250,7 @@ int main(int argc, char* argv[]){
 
 			threads.push_back(thread(notificarVecinos, ref(socketsHablar), ref(semafotoHablar)));
 			sem_wait(&semafotoHablar);
+			sleep(2);
 			threads.push_back(thread(escucharVecinos, ref(socketsEscuchar), socket_fd));
 		}
 	}
