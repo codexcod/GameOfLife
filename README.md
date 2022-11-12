@@ -1,4 +1,4 @@
-# :video_game: :space_invader: Conway's Game of life using sockets in C++ :space_invader: :video_game:
+# :video_game: Conway's Game of life using sockets in C++ :video_game:
 
 # Instructions:
 
